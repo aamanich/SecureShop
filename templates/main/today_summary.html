@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Page Header -->
+<header class="bg-gradient-to-r from-primary to-secondary text-white py-12">
+  <div class="container mx-auto px-6">
+    <h1 class="text-5xl font-bold mb-4 text-center">Today's Payment Summary</h1>
+    <p class="text-xl text-center max-w-3xl mx-auto">Comprehensive overview of today's payment activities.</p>
+  </div>
+</header>
+
+<section class="py-16 container mx-auto px-6">
+  <!-- Key Metrics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="bg-white p-6 rounded-xl shadow">
+      <div class="flex items-center mb-2">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700">Total Transactions</h3>
+      </div>
+      <p id="total-transactions" class="text-3xl font-bold text-gray-900">0</p>
+      <p class="text-sm text-gray-500 mt-1">All transactions today</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <div class="flex items-center mb-2">
+        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700">Total Revenue</h3>
+      </div>
+      <p id="total-revenue" class="text-3xl font-bold text-gray-900">$0.00</p>
+      <p class="text-sm text-gray-500 mt-1">From completed transactions</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <div class="flex items-center mb-2">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700">Success Rate</h3>
+      </div>
+      <p id="success-rate" class="text-3xl font-bold text-gray-900">0%</p>
+      <p class="text-sm text-gray-500 mt-1">Completed vs. total transactions</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <div class="flex items-center mb-2">
+        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700">Avg. Transaction</h3>
+      </div>
+      <p id="avg-transaction" class="text-3xl font-bold text-gray-900">$0.00</p>
+      <p class="text-sm text-gray-500 mt-1">Average completed payment</p>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+    <!-- Payment Methods Chart -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-xl font-semibold mb-6">Payment Methods</h2>
+      <div class="h-80">
+        <canvas id="payment-methods-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Hourly Transaction Volume -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-xl font-semibold mb-6">Hourly Transaction Volume</h2>
+      <div class="h-80">
+        <canvas id="hourly-volume-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Breakdown -->
+  <div class="bg-white p-6 rounded-xl shadow mb-10">
+    <h2 class="text-xl font-semibold mb-6">Transaction Status Breakdown</h2>
+    <div class="overflow-hidden">
+      <div class="h-10 w-full rounded-full bg-gray-200 overflow-hidden">
+        <div id="status-bar" class="flex h-full">
+          <!-- Will be filled by JavaScript -->
+        </div>
+      </div>
+      <div class="flex justify-between mt-4">
+        <div class="flex items-center">
+          <div class="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+          <span class="text-sm">Completed</span>
+          <span id="completed-count" class="ml-2 text-sm font-semibold">0</span>
+        </div>
+        <div class="flex items-center">
+          <div class="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
+          <span class="text-sm">Pending</span>
+          <span id="pending-count" class="ml-2 text-sm font-semibold">0</span>
+        </div>
+        <div class="flex items-center">
+          <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+          <span class="text-sm">Failed</span>
+          <span id="failed-count" class="ml-2 text-sm font-semibold">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Last Updated -->
+  <div class="text-center text-gray-500 text-sm">
+    <p>Last updated: <span id="last-updated">-</span></p>
+    <button id="refresh-btn" class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+      Refresh Data
+    </button>
+  </div>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Chart instances
+  let methodsChart = null;
+  let hourlyChart = null;
+
+  // Initialize payment methods chart
+  function initMethodsChart(labels, data) {
+    if (methodsChart) {
+      methodsChart.destroy();
+    }
+
+    const ctx = document.getElementById('payment-methods-chart').getContext('2d');
+    
+    // Generate colors for each payment method
+    const backgroundColors = [
+      'rgba(79, 70, 229, 0.8)',  // Indigo
+      'rgba(16, 185, 129, 0.8)',  // Green
+      'rgba(245, 158, 11, 0.8)',  // Amber
+      'rgba(239, 68, 68, 0.8)',   // Red
+      'rgba(59, 130, 246, 0.8)',  // Blue
+      'rgba(236, 72, 153, 0.8)',  // Pink
+    ];
+    
+    methodsChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: backgroundColors.slice(0, labels.length),
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 15,
+              padding: 15
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+
+  // Initialize hourly volume chart
+  function initHourlyChart() {
+    const ctx = document.getElementById('hourly-volume-chart').getContext('2d');
+    
+    hourlyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Array(24).fill().map((_, i) => `${i.toString().padStart(2, '0')}:00`),
+        datasets: [{
+          label: 'Transaction Count',
+          data: Array(24).fill(0),
+          backgroundColor: 'rgba(79, 70, 229, 0.6)',
+          borderColor: 'rgba(79, 70, 229, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Update hourly chart
+  function updateHourlyChart(hourlyData) {
+    if (hourlyChart && hourlyData) {
+      hourlyChart.data.labels = hourlyData.labels;
+      hourlyChart.data.datasets[0].data = hourlyData.data;
+      hourlyChart.update();
+    }
+  }
+
+  // Update status bar visualization
+  function updateStatusBar(statusData) {
+    const completed = statusData.completed || 0;
+    const pending = statusData.pending || 0;
+    const failed = statusData.failed || 0;
+    const total = completed + pending + failed;
+    
+    if (total === 0) {
+      document.getElementById('status-bar').innerHTML = `
+        <div class="bg-gray-300 h-full w-full flex items-center justify-center">
+          <span class="text-xs text-gray-600">No transactions today</span>
+        </div>
+      `;
+      return;
+    }
+    
+    const completedPercent = (completed / total) * 100;
+    const pendingPercent = (pending / total) * 100;
+    const failedPercent = (failed / total) * 100;
+    
+    document.getElementById('status-bar').innerHTML = `
+      <div class="bg-green-500 h-full" style="width: ${completedPercent}%"></div>
+      <div class="bg-yellow-500 h-full" style="width: ${pendingPercent}%"></div>
+      <div class="bg-red-500 h-full" style="width: ${failedPercent}%"></div>
+    `;
+    
+    document.getElementById('completed-count').textContent = completed;
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('failed-count').textContent = failed;
+  }
+
+  // Fetch and update all data
+  function fetchAndUpdateData() {
+    fetch('/payment/today-summary/')
+      .then(response => response.json())
+      .then(data => {
+        // Update metrics
+        document.getElementById('total-transactions').textContent = data.count;
+        document.getElementById('total-revenue').textContent = `$${data.revenue.toFixed(2)}`;
+        document.getElementById('success-rate').textContent = `${data.success_rate.toFixed(1)}%`;
+        document.getElementById('avg-transaction').textContent = `$${data.average.toFixed(2)}`;
+        
+        // Update payment methods chart
+        initMethodsChart(data.methods.labels, data.methods.data);
+        
+        // Update status breakdown
+        updateStatusBar(data.status);
+        
+        // Update hourly chart
+        updateHourlyChart(data.hourly);
+        
+        // Update last updated time
+        const now = new Date();
+        document.getElementById('last-updated').textContent = now.toLocaleString();
+      })
+      .catch(error => {
+        console.error('Error fetching summary data:', error);
+      });
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts with empty data
+    initMethodsChart([], []);
+    initHourlyChart();
+    
+    // Fetch initial data
+    fetchAndUpdateData();
+    
+    // Set up refresh button
+    document.getElementById('refresh-btn').addEventListener('click', fetchAndUpdateData);
+  });
+</script>
+{% endblock %}

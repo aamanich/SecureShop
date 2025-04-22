@@ -1,0 +1,87 @@
+<style type="text/tailwindcss">
+    @layer utilities {
+        .notification {
+            @apply flex items-center justify-between p-4 mb-4 rounded-md shadow-md;
+            max-width: 32rem;
+            min-width: 20rem;
+            margin: 1em;
+            width: max-content;
+        }
+        .notification-success {
+            @apply bg-green-100 border-l-4 border-green-500 text-green-700;
+        }
+        .notification-error {
+            @apply bg-red-100 border-l-4 border-red-500 text-red-700;
+        }
+        .notification-warning {
+            @apply bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700;
+        }
+        .notification-info {
+            @apply bg-blue-100 border-l-4 border-blue-500 text-blue-700;
+        }
+        .notification-debug {
+            @apply bg-gray-100 border-l-4 border-gray-500 text-gray-700;
+        }
+    }
+</style>
+
+{% if messages %}
+<div class="flex flex-col items-center">
+  {% for message in messages %}
+  <div class="notification {% if message.tags == 'error' %}notification-error{% elif message.tags == 'success' %}notification-success{% elif message.tags == 'warning' %}notification-warning{% elif message.tags == 'info' %}notification-info{% else %}notification-debug{% endif %}" id="notification-{{ forloop.counter }}">
+    <div class="flex items-center">
+      {% if message.tags == 'error' %}
+      <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {% elif message.tags == 'success' %}
+      <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      {% elif message.tags == 'warning' %}
+      <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      {% elif message.tags == 'info' %}
+      <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {% else %}
+      <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {% endif %}
+      <span>{{ message }}</span>
+    </div>
+    <button type="button" class="ml-4 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="dismissNotification('notification-{{ forloop.counter }}')">
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  function dismissNotification(id) {
+    const notification = document.getElementById(id);
+    if (notification) {
+      notification.style.opacity = "0";
+      notification.style.transition = "opacity 0.3s ease-out";
+      setTimeout(() => {
+        notification.style.display = "none";
+      }, 300);
+    }
+  }
+
+  // Auto-dismiss notifications after 5 seconds
+  document.addEventListener("DOMContentLoaded", function () {
+    const notifications = document.querySelectorAll(".notification");
+    notifications.forEach((notification, index) => {
+      setTimeout(() => {
+        dismissNotification(notification.id);
+      }, 5000 + index * 500); // Stagger the dismissal
+    });
+  });
+</script>
+{% endif %}

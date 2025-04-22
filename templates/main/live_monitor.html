@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Page Header -->
+<header class="bg-gradient-to-r from-primary to-secondary text-white py-12">
+  <div class="container mx-auto px-6">
+    <h1 class="text-5xl font-bold mb-4 text-center">Live Payment Monitor</h1>
+    <p class="text-xl text-center max-w-3xl mx-auto">Real-time tracking of payment transactions.</p>
+  </div>
+</header>
+
+<section class="py-16 container mx-auto px-6">
+  <div class="bg-white p-6 rounded-xl shadow mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Recent Payments</h2>
+      <div class="flex items-center">
+        <div id="status-indicator" class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+        <span id="status-text">Live</span>
+      </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="py-2 px-4 text-left">Transaction ID</th>
+            <th class="py-2 px-4 text-left">Amount</th>
+            <th class="py-2 px-4 text-left">Status</th>
+            <th class="py-2 px-4 text-left">Method</th>
+            <th class="py-2 px-4 text-left">Time</th>
+          </tr>
+        </thead>
+        <tbody id="payment-table-body">
+          {% for payment in recent_payments %}
+          <tr class="border-b border-gray-200">
+            <td class="py-2 px-4">{{ payment.transaction_id|truncatechars:20 }}</td>
+            <td class="py-2 px-4">${{ payment.amount }}</td>
+            <td class="py-2 px-4">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if payment.status == 'completed' %}bg-green-100 text-green-800
+                {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ payment.status }}
+              </span>
+            </td>
+            <td class="py-2 px-4">{{ payment.payment_method }}</td>
+            <td class="py-2 px-4">{{ payment.created_at|date:"M d, Y H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-xl font-semibold mb-4">Today's Summary</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-sm text-gray-500">Transactions</h3>
+          <p id="today-transactions" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-sm text-gray-500">Revenue</h3>
+          <p id="today-revenue" class="text-2xl font-bold">$0.00</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-sm text-gray-500">Success Rate</h3>
+          <p id="today-success-rate" class="text-2xl font-bold">0%</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-sm text-gray-500">Avg. Transaction</h3>
+          <p id="today-avg" class="text-2xl font-bold">$0.00</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-xl font-semibold mb-4">Live Transaction Volume</h2>
+      <div class="h-64">
+        <canvas id="liveTransactionsChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Initialize variables
+  let lastCheck = null;
+  let liveChart = null;
+  const MAX_DATA_POINTS = 30; // Show last 30 data points (2.5 minutes)
+  let chartLabels = Array(MAX_DATA_POINTS).fill('');
+  let chartData = Array(MAX_DATA_POINTS).fill(0);
+  
+  // Format time for chart labels (HH:MM:SS)
+  function formatTimeLabel() {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+  
+  // Initialize live transactions chart
+  function initLiveChart() {
+    const ctx = document.getElementById('liveTransactionsChart').getContext('2d');
+    
+    liveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Transaction Volume ($)',
+          data: chartData,
+          borderColor: '#4F46E5',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 2,
+          pointHoverRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 0 // Disable animations for smoother updates
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              title: function(tooltipItems) {
+                return tooltipItems[0].label || 'No data';
+              },
+              label: function(context) {
+                return `Amount: $${context.raw.toFixed(2)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 6
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '$' + value;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Update live chart with new data
+  function updateLiveChart(transactionAmount) {
+    // Shift all data points to the left
+    chartLabels.shift();
+    chartData.shift();
+    
+    // Add new data point
+    chartLabels.push(formatTimeLabel());
+    chartData.push(transactionAmount);
+    
+    // Update chart
+    liveChart.update();
+  }
+  
+  // Update payment table with new data
+  function updatePaymentTable(payments) {
+    const tableBody = document.getElementById('payment-table-body');
+    let totalAmount = 0;
+    
+    payments.forEach(payment => {
+      // Sum up the amount
+      totalAmount += parseFloat(payment.amount);
+      
+      // Create new row
+      const row = document.createElement('tr');
+      row.className = 'border-b border-gray-200';
+      
+      // Format date
+      const date = new Date(payment.created_at);
+      const formattedDate = date.toLocaleString();
+      
+      // Determine status class
+      let statusClass = '';
+      if (payment.status === 'completed') {
+        statusClass = 'bg-green-100 text-green-800';
+      } else if (payment.status === 'pending') {
+        statusClass = 'bg-yellow-100 text-yellow-800';
+      } else {
+        statusClass = 'bg-red-100 text-red-800';
+      }
+      
+      // Set row content
+      row.innerHTML = `
+        <td class="py-2 px-4">${payment.transaction_id.substring(0, 20)}...</td>
+        <td class="py-2 px-4">$${parseFloat(payment.amount).toFixed(2)}</td>
+        <td class="py-2 px-4">
+          <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+            ${payment.status}
+          </span>
+        </td>
+        <td class="py-2 px-4">${payment.payment_method}</td>
+        <td class="py-2 px-4">${formattedDate}</td>
+      `;
+      
+      // Add to table (at the top)
+      tableBody.insertBefore(row, tableBody.firstChild);
+      
+      // Remove oldest row if more than 20
+      if (tableBody.children.length > 20) {
+        tableBody.removeChild(tableBody.lastChild);
+      }
+    });
+    
+    // Update chart with the total transaction amount
+    updateLiveChart(totalAmount);
+    
+    return totalAmount;
+  }
+  
+  // Fetch payment updates
+  function fetchPaymentUpdates() {
+    const url = lastCheck ? 
+      `/payment/updates/?since=${encodeURIComponent(lastCheck)}` : 
+      '/payment/updates/';
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.payments && data.payments.length > 0) {
+          updatePaymentTable(data.payments);
+          lastCheck = new Date().toISOString();
+        } else {
+          // If no new transactions, still update chart with zero
+          updateLiveChart(0);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching payment updates:', error);
+        document.getElementById('status-indicator').className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
+        document.getElementById('status-text').textContent = 'Offline';
+        // Still update chart with zero on error
+        updateLiveChart(0);
+      });
+  }
+  
+  // Update today's summary
+  function updateTodaySummary() {
+    fetch('/payment/today-summary/')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('today-transactions').textContent = data.count;
+        document.getElementById('today-revenue').textContent = `$${data.revenue.toFixed(2)}`;
+        document.getElementById('today-success-rate').textContent = `${data.success_rate.toFixed(1)}%`;
+        document.getElementById('today-avg').textContent = `$${data.average.toFixed(2)}`;
+      })
+      .catch(error => {
+        console.error('Error fetching today summary:', error);
+      });
+  }
+  
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    lastCheck = new Date().toISOString();
+    initLiveChart();
+    updateTodaySummary();
+    
+    // Set up polling
+    setInterval(fetchPaymentUpdates, 5000);  // Check every 5 seconds
+    setInterval(updateTodaySummary, 5000);  // Update summary every 30 seconds
+  });
+</script>
+{% endblock %}

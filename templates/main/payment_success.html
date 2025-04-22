@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class="py-16 container mx-auto px-6 text-center">
+  <div class="max-w-md mx-auto">
+    <div class="bg-green-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    
+    <h1 class="text-3xl font-bold mb-4 text-dark">Payment Successful!</h1>
+    <p class="text-lg text-gray-600 mb-8">Your payment has been processed successfully. Thank you for your purchase!</p>
+    
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="{% url 'main:products' %}" class="bg-primary text-white py-3 px-8 rounded-lg text-lg font-semibold hover:bg-opacity-90">Continue Shopping</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

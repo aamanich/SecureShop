@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load json_filters %}
+
+{% block content %}
+<!-- Page Header -->
+<header class="bg-gradient-to-r from-primary to-secondary text-white py-12">
+  <div class="container mx-auto px-6">
+    <h1 class="text-5xl font-bold mb-4 text-center">Payment Analytics</h1>
+    <p class="text-xl text-center max-w-3xl mx-auto">Track your store's performance with comprehensive payment analytics.</p>
+  </div>
+</header>
+
+<!-- Analytics Dashboard -->
+<section class="py-16 container mx-auto px-6">
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-lg font-semibold text-gray-600 mb-2">Total Revenue</h2>
+      <p class="text-4xl font-bold text-primary">${{ total_revenue }}</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-lg font-semibold text-gray-600 mb-2">Success Rate</h2>
+      <p class="text-4xl font-bold text-primary">{{ success_rate|floatformat:1 }}%</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-lg font-semibold text-gray-600 mb-2">Total Transactions</h2>
+      <p class="text-4xl font-bold text-primary">{{ total_payments }}</p>
+    </div>
+  </div>
+  
+  <!-- Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+    <!-- Daily Revenue Chart -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-6 text-dark">Daily Revenue (Last 30 Days)</h2>
+      <div class="h-80">
+        <canvas id="dailyRevenueChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Monthly Revenue Chart -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-6 text-dark">Monthly Revenue</h2>
+      <div class="h-80">
+        <canvas id="monthlyRevenueChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+    <!-- Payment Methods -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-6 text-dark">Payment Methods</h2>
+      <div class="h-80">
+        <canvas id="paymentMethodsChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Payment Status Distribution -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-6 text-dark">Payment Status Distribution</h2>
+      <div class="h-80">
+        <canvas id="paymentStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Transactions -->
+  <div class="mt-12 bg-white rounded-xl shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-6 text-dark">Recent Transactions</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Transaction ID</th>
+            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Amount</th>
+            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Status</th>
+            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Method</th>
+            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in recent_payments %}
+          <tr class="border-b border-gray-200">
+            <td class="py-3 px-4 text-sm">{{ payment.transaction_id|truncatechars:15 }}</td>
+            <td class="py-3 px-4 text-sm">${{ payment.amount }}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-1 rounded-full text-xs
+                {% if payment.status == 'completed' %}bg-green-100 text-green-800
+                {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ payment.status }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-sm">{{ payment.payment_method }}</td>
+            <td class="py-3 px-4 text-sm">{{ payment.created_at|date:"M d, Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="py-4 text-center text-gray-500">No transactions found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Set Chart.js default styles to match your theme
+  Chart.defaults.color = '#6B7280';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  
+  // Daily Revenue Chart
+  const dailyRevenueData = {{ daily_revenue|safe }};
+  
+  // Format dates properly for JavaScript
+  const dailyLabels = dailyRevenueData.map(item => {
+    const date = new Date(item.day);
+    return date.toLocaleDateString();
+  });
+  
+  const dailyValues = dailyRevenueData.map(item => parseFloat(item.revenue));
+  
+  new Chart(document.getElementById('dailyRevenueChart'), {
+    type: 'line',
+    data: {
+      labels: dailyLabels,
+      datasets: [{
+        label: 'Daily Revenue',
+        data: dailyValues,
+        borderColor: '#4F46E5',
+        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `$${context.raw}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Monthly Revenue Chart
+  const monthlyRevenueData = {{ monthly_revenue|safe }};
+  
+  // Format dates properly for JavaScript
+  const monthlyLabels = monthlyRevenueData.map(item => {
+    const date = new Date(item.month);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  });
+  
+  const monthlyValues = monthlyRevenueData.map(item => parseFloat(item.revenue));
+  
+  new Chart(document.getElementById('monthlyRevenueChart'), {
+    type: 'bar',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Monthly Revenue',
+        data: monthlyValues,
+        backgroundColor: '#4F46E5'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `$${context.raw}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Payment Methods Chart
+  const paymentMethodsData = {{ payment_methods|safe }};
+  const methodLabels = paymentMethodsData.map(item => item.payment_method || 'Unknown');
+  const methodValues = paymentMethodsData.map(item => parseInt(item.count));
+  
+  new Chart(document.getElementById('paymentMethodsChart'), {
+    type: 'doughnut',
+    data: {
+      labels: methodLabels,
+      datasets: [{
+        data: methodValues,
+        backgroundColor: [
+          '#4F46E5',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+  
+  // Payment Status Chart
+  const paymentStatusData = {{ payment_status|safe }};
+  const statusLabels = paymentStatusData.map(item => item.status || 'Unknown');
+  const statusValues = paymentStatusData.map(item => parseInt(item.count));
+  const statusColors = {
+    'completed': '#10B981',   // Green
+    'pending': '#F59E0B',     // Yellow/Orange
+    'failed': '#EF4444',      // Red
+    'refunded': '#8B5CF6',    // Purple
+    'cancelled': '#6B7280',   // Gray
+    'Unknown': '#94A3B8'      // Light Gray
+  };
+  
+  const statusBackgroundColors = statusLabels.map(label => statusColors[label] || '#94A3B8');
+  
+  new Chart(document.getElementById('paymentStatusChart'), {
+    type: 'pie',
+    data: {
+      labels: statusLabels,
+      datasets: [{
+        data: statusValues,
+        backgroundColor: statusBackgroundColors
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.raw;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = Math.round((value / total) * 100);
+              return `${context.label}: ${value} (${percentage}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

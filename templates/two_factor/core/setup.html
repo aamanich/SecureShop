@@ -1,0 +1,132 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block two_factor_title %}Enable Two-Factor Authentication{% endblock %}
+{% block two_factor_subtitle %}Secure your account with an additional verification step{% endblock %}
+
+{% block two_factor_content %}
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+    {{ wizard.management_form }}
+    
+    {% if wizard.steps.current == 'welcome' %}
+        <div class="text-center mb-6">
+            <svg class="h-16 w-16 mx-auto text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <p class="text-lg text-gray-700 mb-4">You're about to enhance your account security with two-factor authentication.</p>
+            <p class="text-base text-gray-600">This requires an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy on your mobile device.</p>
+        </div>
+        
+    {% elif wizard.steps.current == 'method' %}
+        <div class="mb-6">
+            <p class="text-lg text-gray-700 mb-4">Choose your preferred authentication method:</p>
+            
+            {% for field in form %}
+                <div class="mb-4">
+                    <div class="flex items-center">
+                        {{ field }}
+                        <label for="{{ field.id_for_label }}" class="ml-2 block text-base text-gray-700">
+                            {{ field.label }}
+                        </label>
+                    </div>
+                    {% if field.help_text %}
+                        <p class="text-sm text-gray-500 mt-1 ml-6">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        
+    {% elif wizard.steps.current == 'generator' %}
+        <div class="text-center mb-6">
+            <p class="text-lg text-gray-700 mb-6">Scan this QR code with your authenticator app:</p>
+            
+            <div class="bg-white p-4 inline-block rounded-lg shadow-md mb-6">
+                <img src="{{ QR_URL }}" alt="QR Code" class="mx-auto">
+            </div>
+            
+            <p class="text-base text-gray-600 mb-2">Can't scan the QR code?</p>
+            <p class="text-sm text-gray-500 mb-4">Enter this key manually in your app:</p>
+            <div class="bg-gray-100 p-3 rounded-md mb-6">
+                <code class="font-mono text-base">{{ secret_key }}</code>
+            </div>
+            
+            <p class="text-lg text-gray-700 mt-6 mb-2">Enter the verification code from your app:</p>
+        </div>
+        
+        <div>
+            <label for="{{ form.token.id_for_label }}" class="block text-base font-medium text-gray-700 mb-2">Verification Code</label>
+            <input type="text" name="{{ form.token.html_name }}" id="{{ form.token.id_for_label }}" required class="input w-full text-center text-2xl tracking-widest font-mono py-3 px-4" placeholder="123456" autocomplete="one-time-code" autofocus maxlength="6">
+            {% if form.token.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.token.errors.0 }}</p>
+            {% endif %}
+        </div>
+        
+    {% elif wizard.steps.current == 'backup' %}
+        <div class="text-center mb-6">
+            <svg class="h-16 w-16 mx-auto text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+            </svg>
+            <p class="text-lg text-gray-700 mb-4">Save these backup codes in a secure place.</p>
+            <p class="text-base text-gray-600 mb-6">You can use these one-time codes to access your account if you lose your device.</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            {% for code in backup_tokens %}
+                <div class="bg-gray-100 p-3 rounded-md text-center">
+                    <code class="font-mono text-base">{{ code }}</code>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mb-6">
+            <a href="javascript:window.print()" class="inline-flex items-center text-primary hover:text-blue-700">
+                <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z" />
+                </svg>
+                Print these codes
+            </a>
+        </div>
+        
+        <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-md mb-6">
+            <div class="flex">
+                <svg class="h-6 w-6 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                    <p class="text-base font-medium">Keep these codes safe!</p>
+                    <p class="text-sm mt-1">You won't be able to view these codes again.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center">
+            <label for="{{ form.wizard_goto_step.id_for_label }}" class="block text-base font-medium text-gray-700 mb-2">I have saved these backup codes</label>
+            <input type="checkbox" name="{{ form.wizard_goto_step.html_name }}" id="{{ form.wizard_goto_step.id_for_label }}" required class="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded">
+            {% if form.wizard_goto_step.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.wizard_goto_step.errors.0 }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <div class="flex items-center justify-between mt-8">
+        {% if wizard.steps.prev %}
+            <button name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}" class="btn btn-secondary py-3 px-6">
+                {% trans "Back" %}
+            </button>
+        {% else %}
+            <button disabled type="button" class="btn btn-secondary py-3 px-6 opacity-50 cursor-not-allowed">
+                {% trans "Back" %}
+            </button>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-primary py-3 px-6">
+            {% if wizard.steps.current == wizard.steps.last %}
+                {% trans "Complete Setup" %}
+            {% else %}
+                {% trans "Next" %}
+            {% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}

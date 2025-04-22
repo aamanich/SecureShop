@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<section class="py-16 container mx-auto px-6">
+  <div class="max-w-2xl mx-auto">
+    <!-- Payment Card -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-primary to-secondary py-6 px-8">
+        <h1 class="text-2xl font-bold text-white">Complete Your Purchase</h1>
+      </div>
+      
+      <!-- Content -->
+      <div class="p-8">
+        <div class="flex flex-col md:flex-row gap-8 mb-8">
+          <!-- Product Image and Info -->
+          <div class="md:w-2/3">
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+              <!-- Product Image -->
+              <div class="sm:w-1/3">
+                {% if product.image %}
+                  <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-auto rounded-lg object-cover aspect-square">
+                {% else %}
+                  <div class="w-full h-auto rounded-lg bg-gray-100 flex items-center justify-center aspect-square">
+                    <svg class="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                {% endif %}
+              </div>
+              
+              <!-- Product Details -->
+              <div class="sm:w-2/3">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ product.name }}</h2>
+                <p class="text-gray-600 mb-4">{{ product.description|truncatechars:120 }}</p>
+              </div>
+            </div>
+            
+            <!-- Features List -->
+            <div class="mb-4">
+              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Includes</h3>
+              <ul class="space-y-1 text-gray-600">
+                <li class="flex items-center">
+                  <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Free shipping
+                </li>
+                <li class="flex items-center">
+                  <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  30-day money-back guarantee
+                </li>
+                <li class="flex items-center">
+                  <svg class="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  24/7 customer support
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Price Card -->
+          <div class="md:w-1/3 bg-gray-50 rounded-xl p-6">
+            <div class="text-gray-600 mb-2">Total Price</div>
+            <div class="text-3xl font-bold text-primary mb-1">${{ product.price }}</div>
+            <div class="text-sm text-gray-500 mb-4">One-time payment</div>
+            
+            <!-- Payment Methods -->
+            <div class="flex items-center space-x-2 mb-4">
+              <img src="{% static 'images/visa.png' %}" alt="Visa" class="h-6">
+              <img src="{% static 'images/mastercard.png' %}" alt="Mastercard" class="h-6">
+              <img src="{% static 'images/american-express.png' %}" alt="American Express" class="h-6">
+              <span class="text-xs text-gray-400">+ more</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Secure Payment Notice -->
+        <div class="flex items-center justify-center mb-6 text-sm text-gray-500">
+          <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          Secure payment processing by Stripe
+        </div>
+        
+        <!-- Payment Button -->
+        <button id="checkout-button" class="w-full bg-primary text-white py-4 px-6 rounded-xl text-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center">
+          <span>Pay Now</span>
+          <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Footer -->
+      <div class="px-8 py-4 bg-gray-50 border-t border-gray-100">
+        <div class="flex items-center justify-center text-sm text-gray-500">
+          <a href="{% url 'main:product' product.slug %}" class="flex items-center hover:text-primary">
+            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Return to product
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Trust Badges -->
+    <div class="mt-8 flex flex-wrap justify-center gap-6">
+      <div class="flex items-center text-sm text-gray-500">
+        <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        Secure SSL Encryption
+      </div>
+      <div class="flex items-center text-sm text-gray-500">
+        <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+        PCI DSS Compliant
+      </div>
+      <div class="flex items-center text-sm text-gray-500">
+        <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        24/7 Support
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const stripe = Stripe('{{ stripe_key }}');
+  const checkoutButton = document.getElementById('checkout-button');
+  
+  checkoutButton.addEventListener('click', function() {
+    // Show loading state
+    checkoutButton.disabled = true;
+    checkoutButton.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+    
+    // Create a checkout session
+    fetch('/create-checkout-session/{{ product.id }}/')
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(session) {
+      return stripe.redirectToCheckout({ sessionId: session.id });
+    })
+    .then(function(result) {
+      if (result.error) {
+        // Reset button state
+        checkoutButton.disabled = false;
+        checkoutButton.innerHTML = 'Pay Now <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>';
+        alert(result.error.message);
+      }
+    })
+    .catch(function(error) {
+      // Reset button state
+      checkoutButton.disabled = false;
+      checkoutButton.innerHTML = 'Pay Now <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>';
+      console.error('Error:', error);
+    });
+  });
+</script>
+
+{% endblock %}
